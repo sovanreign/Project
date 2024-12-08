@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  COACH
+  ADMIN
+}
+
+enum YearLevel {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  username String @unique
+  password String
+  uniqueId String @unique
+  firstName String
+  lastName String
+  email String
+  address String?
+  bio String?
+  contactNumber String?
+  yearLevel YearLevel? @default(FIRST)
+  role Role @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships based on role
+  courseId Int? // For students and coaches
+  course Course? @relation(fields: [courseId], references: [id])
+
+  departmentId Int? // For admins
+  department Department? @relation(fields: [departmentId], references: [id])
+
+  assignmentsAsStudent Assignment[] @relation("StudentAssignments")
+  assignmentsAsCoach   Assignment[] @relation("CoachAssignments")
+}
+
+model Course {
+  id Int @id @default(autoincrement())
+  courseId String @unique
+  code String @unique
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departmentId Int
+  department Department @relation(fields: [departmentId], references: [id])
+
+  // Relationships
+  users User[] 
+}
+
+model Department {
+  id Int @id @default(autoincrement())
+  code String @unique
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courses Course[]
+  users User[]
+}
+
+model Assignment {
+  id Int @id @default(autoincrement())
+  studentId Int
+  coachId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student    User     @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  coach      User     @relation("CoachAssignments", fields: [coachId], references: [id], onDelete: Cascade)
+}
